@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -x
+
+BUILD=build
+OPT='-g -Werror'
+
+## Create the build directory
+mkdir -p $BUILD 
+
+## Build individual files
+python scripts/mkh.py ll.c > $BUILD/ll_proto.h
+python scripts/mkh.py main.c > $BUILD/main_proto.h
+
+gcc $OPT ll.c -c -o $BUILD/ll.o
+gcc $OPT main.c -c -o $BUILD/main.o
+
+## Link objects to exec
+gcc $OPT $BUILD/ll.o $BUILD/main.o -o $BUILD/exec
+
+## Soft link exec
+ln -s -f $BUILD/exec exec
+echo "BUILD complete!!"
