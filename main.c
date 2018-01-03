@@ -1,7 +1,6 @@
 #include "branch_predictor.h"
 
 void tracify (predictPT predictP, char* fileName) {
-
    FILE *trace;
    int  address;
    char  actual; 
@@ -16,12 +15,23 @@ void tracify (predictPT predictP, char* fileName) {
    }
    while(!feof(trace));
    fclose(trace);
+}
+
+void printHeader (predictPT predictP)
+{
+   int predictions, missPredictions;
+   getResults(predictP, &predictions, &missPredictions);
+
+   float missRate = (float)missPredictions / (float)predictions;
+
+   printf("OUTPUT\n");
+   printf("number of predictions:	%d\n", predictions);
+   printf("number of mispredictions: %d\n", missPredictions);
+   printf("misprediction rate:	%.2f%%\n", missRate*100.0);
 
 }
 
-
 int main (int argc, char** argv) {
-
    char* mode     = argv[1];
    int   m        = atoi(argv[2]);
    int   btbSize  = atoi(argv[3]);
@@ -30,18 +40,15 @@ int main (int argc, char** argv) {
    int   n        = 0;
 
    predictPT predictP = predictorAlloc (m, n);
-
    tracify(predictP, argv[traceNo]);
 
+   printf("COMMAND\n");
+   for(int i = 0; i < argc; i++ ){
+      printf("%s ", argv[i]);
+   }
+   printf("\n");
+
+   printHeader(predictP);
+   printf("FINAL BIMODAL CONTENTS\n");
    printCounters(predictP);
-   
 }
-
-
-
-
-
-
-
-
-

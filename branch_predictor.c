@@ -38,7 +38,7 @@ int makePrediction (predictPT predictP, int index)
 }
 
 /*!proto*/
-void updateCounters (predictPT predictP, int index, int prediction, int actual)
+void updateCounters (predictPT predictP, int index, int actual)
 /*!endproto*/
 {
    if(actual == TAKEN) 
@@ -53,9 +53,13 @@ void updateCounters (predictPT predictP, int index, int prediction, int actual)
 void bpProcess (predictPT predictP, uint32_t address, int actual)
 /*!endproto*/
 {
+   predictP->predictions++;
    int index      = getIndex (predictP, address);
    int prediction = makePrediction (predictP, index); 
-   updateCounters (predictP, index, prediction, actual);
+   updateCounters (predictP, index, actual);
+
+   if(prediction != actual)
+      predictP->missPredictions++;
 }
 
 /*!proto*/
@@ -64,4 +68,12 @@ void printCounters (predictPT predictP)
 {
    for(int i = 0; i < predictP->rows; i++)
       printf("%d %d\n", i, predictP->counters[i]);
+}
+
+/*!proto*/
+void getResults (predictPT predictP, int* predictions, int* missPredictions)
+/*!endproto*/
+{
+   *predictions     = predictP->predictions;
+   *missPredictions = predictP->missPredictions;
 }

@@ -22,6 +22,8 @@ typedef struct _predictT {
    int       lShiftBits;
    int       rShiftBits;
    int*      counters;
+   int       predictions;
+   int       missPredictions;
 }predictT;
 
 #include "build/branch_predictor_proto.h"

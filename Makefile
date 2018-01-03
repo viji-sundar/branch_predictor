@@ -5,7 +5,7 @@ WARN = -Werror
 CFLAGS = $(OPT) $(WARN)
 BUILD = build
 MKH   = python scripts/mkh.py
-EXE_NAME = exec
+EXE_NAME = sim 
 
 # List all your .c files here
 C_SRC = $(wildcard *.c)
