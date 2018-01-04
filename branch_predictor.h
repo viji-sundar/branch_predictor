@@ -7,7 +7,6 @@
 #define ADDRESSWIDTH           32
 #define TAKEN                  1
 #define NOT_TAKEN              0
-#define INIT_COUNT             2
 #define PC_OFFSET              2
 #define BASE_COUNT             2
 #define BIMODAL                0
@@ -21,16 +20,18 @@ typedef struct _predictT* predictPT;
 typedef unsigned int uint32_t;
 
 typedef struct _predictT {
-   int       m;
-   int       n;
-   int       rows;
-   int       lShiftBits;
-   int       rShiftBits;
-   int*      counters;
-   int       predictions;
-   int       missPredictions;
-   int       gHistoryReg;
-   int       mode;
+   int         m;
+   int         n;
+   int         rows;
+   int         lShiftBits;
+   int         rShiftBits;
+   int*        counters;
+   int         predictions;
+   int         missPredictions;
+   int         gHistoryReg;
+   int         mode;
+   predictPT   biModalP;
+   predictPT   gShareP;
 }predictT;
 
 #include "build/branch_predictor_proto.h"

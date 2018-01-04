@@ -1,7 +1,7 @@
 #include "branch_predictor.h"
 
 /*!proto*/
-predictPT predictorAlloc (int mode, int m, int n) 
+predictPT predictorAlloc (int mode, int m, int n, int initCount) 
 /*!endproto*/
 {
    predictPT predictP          = (predictPT)calloc(1, sizeof(predictT));
@@ -17,7 +17,7 @@ predictPT predictorAlloc (int mode, int m, int n)
    //FIXME: are they infact rows ?
    predictP->counters          = (int*)calloc(predictP->rows, sizeof(int));
    for(int i = 0; i < predictP->rows; i++) {
-      predictP->counters[i]    = INIT_COUNT;
+      predictP->counters[i]    = initCount;
    }
    return predictP;
 }
@@ -51,8 +51,27 @@ void updateCounters (predictPT predictP, int index, int actual)
    else 
       predictP->counters[index]--;
 
-   predictP->gHistoryReg     = (predictP->gHistoryReg >> 1) | (actual << (predictP->n-1));
    predictP->counters[index] = SATURATE ( predictP->counters[index], 0, 3 );
+}
+
+/*!proto*/
+void updateHCounter (predictPT predictP, int index, int actual, int predictG, int predictB)
+/*!endproto*/
+{
+   if(predictG == actual && predictB != actual)
+      predictP->counters[index]++;
+   else if(predictG != actual && predictB == actual)
+      predictP->counters[index]--;
+
+   predictP->counters[index] = SATURATE ( predictP->counters[index], 0, 3 );
+}
+
+
+/*!proto*/
+void updateGHR (predictPT predictP, int actual) 
+/*!endproto*/
+{
+   predictP->gHistoryReg     = (predictP->gHistoryReg >> 1) | (actual << (predictP->n-1));
 }
 
 /*!proto*/
@@ -60,18 +79,53 @@ void bpProcess (predictPT predictP, uint32_t address, int actual)
 /*!endproto*/
 {
    predictP->predictions++;
-   int index      = getIndex (predictP, address);
-   int prediction = makePrediction (predictP, index); 
-   updateCounters (predictP, index, actual);
+   int prediction;
+
+   if(predictP->mode != HYBRID){
+      int index           = getIndex (predictP, address);
+      prediction          = makePrediction (predictP, index); 
+      updateCounters (predictP, index, actual);
+      updateGHR (predictP, actual); 
+   }
+   else {
+      int indexH          = getIndex (predictP, address);
+      int indexG          = getIndex (predictP->gShareP, address);
+      int indexB          = getIndex (predictP->biModalP, address);
+
+      int predictionG     = makePrediction(predictP->gShareP, indexG);
+      int predictionB     = makePrediction(predictP->biModalP, indexB);
+      
+      if(predictP->counters[indexH] >= BASE_COUNT) {
+         prediction       = predictionG;
+         updateCounters(predictP->gShareP, indexG, actual);
+      }
+      else {
+         prediction       = predictionB;
+         updateCounters(predictP->biModalP, indexB, actual);
+      }
+      updateGHR (predictP->gShareP, actual); 
+      updateHCounter(predictP, indexH, actual, predictionG, predictionB); 
+   }
 
    if(prediction != actual)
       predictP->missPredictions++;
 }
 
 /*!proto*/
-void printCounters (predictPT predictP)
+void makeHybridPredictor (predictPT predictP, predictPT gShareP, predictPT biModalP)
 /*!endproto*/
 {
+   predictP->gShareP    = gShareP;
+   predictP->biModalP   = biModalP;
+}
+
+/*!proto*/
+void printCounters (predictPT predictP, char* name)
+/*!endproto*/
+{
+   if( predictP == NULL ) return;
+
+   printf("FINAL %s CONTENTS\n", name);
    for(int i = 0; i < predictP->rows; i++)
       printf("%d %d\n", i, predictP->counters[i]);
 }
