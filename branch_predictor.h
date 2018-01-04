@@ -2,6 +2,7 @@
 #include<malloc.h>
 #include<math.h>
 #include<stdlib.h>
+#include<string.h>
 
 #define ADDRESSWIDTH           32
 #define TAKEN                  1
@@ -9,6 +10,10 @@
 #define INIT_COUNT             2
 #define PC_OFFSET              2
 #define BASE_COUNT             2
+#define BIMODAL                0
+#define GSHARE                 1
+#define HYBRID                 2
+
 #define SATURATE(A, MIN, MAX)  (A > MAX) ? MAX : (A < MIN ? MIN : A)   
 
 typedef struct _predictT* predictPT;
@@ -24,6 +29,8 @@ typedef struct _predictT {
    int*      counters;
    int       predictions;
    int       missPredictions;
+   int       gHistoryReg;
+   int       mode;
 }predictT;
 
 #include "build/branch_predictor_proto.h"

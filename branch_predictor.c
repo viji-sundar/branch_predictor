@@ -1,12 +1,12 @@
 #include "branch_predictor.h"
 
-
 /*!proto*/
-predictPT predictorAlloc (int m, int n) 
+predictPT predictorAlloc (int mode, int m, int n) 
 /*!endproto*/
 {
    predictPT predictP          = (predictPT)calloc(1, sizeof(predictT));
 
+   predictP->mode              = mode;
    predictP->m                 = m;
    predictP->n                 = n;
    predictP->rows              = pow(2, m);
@@ -26,8 +26,13 @@ predictPT predictorAlloc (int m, int n)
 int getIndex (predictPT predictP, uint32_t address)
 /*!endproto*/
 {
-   return (address << predictP->lShiftBits) >> predictP->rShiftBits;  
+   int index = (address << predictP->lShiftBits) >> predictP->rShiftBits; 
+   if(predictP->mode == BIMODAL)
+      return index; 
+   else
+      return ((predictP->gHistoryReg) << (predictP->m - predictP->n)) ^ index;
 }
+
 
 /*!proto*/
 // predict at a particular index. Make a prediction.
@@ -43,9 +48,10 @@ void updateCounters (predictPT predictP, int index, int actual)
 {
    if(actual == TAKEN) 
       predictP->counters[index]++;
-   else
+   else 
       predictP->counters[index]--;
 
+   predictP->gHistoryReg     = (predictP->gHistoryReg >> 1) | (actual << (predictP->n-1));
    predictP->counters[index] = SATURATE ( predictP->counters[index], 0, 3 );
 }
 

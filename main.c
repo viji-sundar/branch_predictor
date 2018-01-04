@@ -32,14 +32,23 @@ void printHeader (predictPT predictP)
 }
 
 int main (int argc, char** argv) {
-   char* mode     = argv[1];
+   char* cMode    = argv[1];
+   int   mode     = strcmp(cMode, "gshare") == 0 ? GSHARE : BIMODAL;
    int   m        = atoi(argv[2]);
+   int   n        = 0;
    int   btbSize  = atoi(argv[3]);
    int   btbAssoc = atoi(argv[4]);
    int   traceNo  = 5;
-   int   n        = 0;
 
-   predictPT predictP = predictorAlloc (m, n);
+   if(mode == GSHARE) {
+      n        = atoi(argv[3]);
+      btbSize  = atoi(argv[4]);
+      btbAssoc = atoi(argv[5]);
+      traceNo  = 6;
+   }
+
+   predictPT predictP = predictorAlloc (mode, m, n);
+
    tracify(predictP, argv[traceNo]);
 
    printf("COMMAND\n");
@@ -49,6 +58,6 @@ int main (int argc, char** argv) {
    printf("\n");
 
    printHeader(predictP);
-   printf("FINAL BIMODAL CONTENTS\n");
+   printf("FINAL %s CONTENTS\n", mode == GSHARE ? "GSHARE" : "BIMODAL");
    printCounters(predictP);
 }
