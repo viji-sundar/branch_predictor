@@ -1,10 +1,11 @@
 #include "branch_predictor.h"
 
 /*!proto*/
-predictPT predictorAlloc (int mode, int m, int n, int initCount) 
+predictPT predictorAlloc (int mode, int m, int n, int initCount, int btbSize, int btbAssoc) 
 /*!endproto*/
 {
    predictPT predictP          = (predictPT)calloc(1, sizeof(predictT));
+   predictP->btbP              = cacheAllocate(btbSize, 4, btbAssoc, WBWA, LRU); 
 
    predictP->mode              = mode;
    predictP->m                 = m;
@@ -43,7 +44,7 @@ int makePrediction (predictPT predictP, int index)
 }
 
 /*!proto*/
-void updateCounters (predictPT predictP, int index, int actual)
+void bpUpdateCounters (predictPT predictP, int index, int actual)
 /*!endproto*/
 {
    if(actual == TAKEN) 
@@ -78,33 +79,36 @@ void updateGHR (predictPT predictP, int actual)
 void bpProcess (predictPT predictP, uint32_t address, int actual)
 /*!endproto*/
 {
+   
    predictP->predictions++;
-   int prediction;
+   int prediction = NOT_TAKEN;
 
-   if(predictP->mode != HYBRID){
-      int index           = getIndex (predictP, address);
-      prediction          = makePrediction (predictP, index); 
-      updateCounters (predictP, index, actual);
-      updateGHR (predictP, actual); 
-   }
-   else {
-      int indexH          = getIndex (predictP, address);
-      int indexG          = getIndex (predictP->gShareP, address);
-      int indexB          = getIndex (predictP->biModalP, address);
-
-      int predictionG     = makePrediction(predictP->gShareP, indexG);
-      int predictionB     = makePrediction(predictP->biModalP, indexB);
-      
-      if(predictP->counters[indexH] >= BASE_COUNT) {
-         prediction       = predictionG;
-         updateCounters(predictP->gShareP, indexG, actual);
+   if(!(predictP->btbP != NULL && !read (predictP->btbP, address))) {
+      if(predictP->mode != HYBRID){
+         int index           = getIndex (predictP, address);
+         prediction          = makePrediction (predictP, index); 
+         bpUpdateCounters (predictP, index, actual);
+         updateGHR (predictP, actual); 
       }
       else {
-         prediction       = predictionB;
-         updateCounters(predictP->biModalP, indexB, actual);
+         int indexH          = getIndex (predictP, address);
+         int indexG          = getIndex (predictP->gShareP, address);
+         int indexB          = getIndex (predictP->biModalP, address);
+
+         int predictionG     = makePrediction(predictP->gShareP, indexG);
+         int predictionB     = makePrediction(predictP->biModalP, indexB);
+
+         if(predictP->counters[indexH] >= BASE_COUNT) {
+            prediction       = predictionG;
+            bpUpdateCounters(predictP->gShareP, indexG, actual);
+         }
+         else {
+            prediction       = predictionB;
+            bpUpdateCounters(predictP->biModalP, indexB, actual);
+         }
+         updateGHR (predictP->gShareP, actual); 
+         updateHCounter(predictP, indexH, actual, predictionG, predictionB); 
       }
-      updateGHR (predictP->gShareP, actual); 
-      updateHCounter(predictP, indexH, actual, predictionG, predictionB); 
    }
 
    if(prediction != actual)
@@ -137,3 +141,4 @@ void getResults (predictPT predictP, int* predictions, int* missPredictions)
    *predictions     = predictP->predictions;
    *missPredictions = predictP->missPredictions;
 }
+

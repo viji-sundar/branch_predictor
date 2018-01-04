@@ -3,6 +3,7 @@
 #include<math.h>
 #include<stdlib.h>
 #include<string.h>
+#include "cache.h"
 
 #define ADDRESSWIDTH           32
 #define TAKEN                  1
@@ -32,6 +33,7 @@ typedef struct _predictT {
    int         mode;
    predictPT   biModalP;
    predictPT   gShareP;
+   cachePT     btbP;   
 }predictT;
 
 #include "build/branch_predictor_proto.h"

@@ -37,8 +37,8 @@ int main (int argc, char** argv) {
    int   m1       = mode == HYBRID ? atoi(argv[3]) : atoi(argv[2]);
    int   m2       = mode == HYBRID ? atoi(argv[5]) : atoi(argv[2]);
 
-   int   btbSize  = 0;
-   int   btbAssoc = 0;
+   int   btbSize  = (mode == GSHARE) ? atoi(argv[4]) : (mode == HYBRID ? atoi(argv[6]) : atoi(argv[3]));
+   int   btbAssoc = (mode == GSHARE) ? atoi(argv[5]) : (mode == HYBRID ? atoi(argv[7]) : atoi(argv[4]));
    int   n        = (mode == GSHARE) ? atoi(argv[3]) : (mode == HYBRID ? atoi(argv[4]) : 0);
    int   k        = atoi(argv[2]);  
    int   traceNo  = (mode == GSHARE) ? 6 : (mode == HYBRID ? 8 : 5);
@@ -46,13 +46,13 @@ int main (int argc, char** argv) {
    predictPT predictP;
 
    if( mode == HYBRID ){
-      predictP           = predictorAlloc (HYBRID , k, n, 1);
-      predictPT gShareP  = predictorAlloc (GSHARE , m1, n, 2);
-      predictPT biModalP = predictorAlloc (BIMODAL, m2, n, 2);
+      predictP           = predictorAlloc (HYBRID , k, n, 1, btbSize, btbAssoc);
+      predictPT gShareP  = predictorAlloc (GSHARE , m1, n, 2, 0, 0);
+      predictPT biModalP = predictorAlloc (BIMODAL, m2, n, 2, 0, 0);
 
       makeHybridPredictor( predictP, gShareP, biModalP );
    } else{
-      predictP = predictorAlloc (mode, m1, n, 2);
+      predictP = predictorAlloc (mode, m1, n, 2, btbSize, btbAssoc);
    }
 
    tracify(predictP, argv[traceNo]);
@@ -64,6 +64,8 @@ int main (int argc, char** argv) {
    printf("\n");
 
    printHeader(predictP);
+   
+   printTagstore(predictP->btbP, "BTB");
    printCounters(predictP, mode == GSHARE ? "GSHARE" : (mode == HYBRID ? "CHOOSER" : "BIMODAL"));
    printCounters(predictP->gShareP, "GSHARE");
    printCounters(predictP->biModalP, "BIMODAL");
